@@ -1,4 +1,9 @@
-import sys, subprocess, os, threading, time, cv2
+import sys
+import subprocess
+import os
+import threading
+import time
+import cv2
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter
@@ -8,14 +13,14 @@ import numpy as np
 from scipy.interpolate import interp1d
 from PIL import Image
 from rawkit.raw import Raw
-import rawpy, imageio
+import rawpy
+import imageio
 from skimage import io
 
 from sortedcontainers import SortedDict
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
-
 
 
 class RadiusChangedEvent(QtCore.QObject):
@@ -25,13 +30,13 @@ class RadiusChangedEvent(QtCore.QObject):
 # based on https://github.com/abhilb/pyqtgraphutils
 class CircleItem(pg.GraphicsObject):
 
-    MASTER_SCALED_RADIUS = 45 # petri dishes are 100 mm diameter
+    MASTER_SCALED_RADIUS = 45  # petri dishes are 90 mm diameter
     is_master = False
     picture = None
     is_selected = True
     is_hidden = False
-    master_radius = 275 # px of the photograph
-    scaled_radius = 0 # mm IRL
+    master_radius = 275  # px of the photograph
+    scaled_radius = 0  # mm IRL
     accent_color = 'r'
     clickable = True
     label = "fas"
@@ -40,20 +45,19 @@ class CircleItem(pg.GraphicsObject):
         pg.GraphicsObject.__init__(self)
         self.radiusChanged = RadiusChangedEvent()
 
-
     def setData(self, center, radius_point, angle_span=90):
         self.center = center
         self.radius_point = radius_point
-        self.radius = np.sqrt((radius_point[0]-center[0])**2+(radius_point[1]-center[1])**2)
-        self.angle = np.arctan2(radius_point[0]-center[0], radius_point[1]-center[1]) * 180 / np.pi
+        self.radius = np.sqrt(
+            (radius_point[0]-center[0])**2+(radius_point[1]-center[1])**2)
+        self.angle = np.arctan2(
+            radius_point[0]-center[0], radius_point[1]-center[1]) * 180 / np.pi
         # print("radius", self.radius, self.center, self.radius_point, self.angle)
         self.angle_span = angle_span
-
 
         # R/MR = SR / SMR
         # SR = R*SMR/MR
         # self.scaled_radius = self.MASTER_SCALED_RADIUS * self.radius / self.master_radius
-
 
         # self.textItem = QtGui.QGraphicsTextItem(self) #QGraphicsSimpleTextItem
         #self.textItem.setParentItem(self)
@@ -62,7 +66,6 @@ class CircleItem(pg.GraphicsObject):
         #self.textItem.setFont(QtGui.QFont("Arial", 15, QtGui.QFont.Bold))
 
         #self.generatePicture()
-
 
     def clear(self):
         self.picture = None
@@ -78,7 +81,7 @@ class CircleItem(pg.GraphicsObject):
             self.is_hidden = False
             self.generatePicture()
 
-    def select(self, is_selected = True):
+    def select(self, is_selected=True):
         self.is_selected = is_selected
         if not self.picture is None:
             self.generatePicture()
@@ -91,9 +94,11 @@ class CircleItem(pg.GraphicsObject):
 
         if self.is_selected:
             p.setPen(pg.mkPen('w'))
-            p.drawEllipse(QtCore.QPoint(self.center[0], self.center[1]), self.radius, self.radius)
+            p.drawEllipse(QtCore.QPoint(
+                self.center[0], self.center[1]), self.radius, self.radius)
             p.setPen(pg.mkPen(self.accent_color))
-            p.drawLine(QtCore.QPoint(self.center[0], self.center[1]), QtCore.QPoint(self.radius_point[0], self.radius_point[1]))
+            p.drawLine(QtCore.QPoint(self.center[0], self.center[1]), QtCore.QPoint(
+                self.radius_point[0], self.radius_point[1]))
 
         p.setPen(pg.mkPen(color=self.accent_color, width=3))
         p.drawArc(int(self.center[0]-self.radius),
@@ -101,7 +106,7 @@ class CircleItem(pg.GraphicsObject):
                   int(self.radius*2),
                   int(self.radius*2),
                   int((self.angle-90-self.angle_span/2)*16),
-                  int(self.angle_span*16) )
+                  int(self.angle_span*16))
 
         if self.is_selected:
             p.setPen(pg.mkPen(self.accent_color))
@@ -113,33 +118,30 @@ class CircleItem(pg.GraphicsObject):
         text = f"{self.label}: {round(self.scaled_radius, 1)} mm"
         p.drawText(self.center[0]+10, self.center[1]+5, text)
 
-
-
-
         #self.textItem.setPlainText(str(self.center)+": " + str(round(self.radius, 1)))
         #self.textItem.setPos(pg.Point(self.center[0], self.center[1]))
         #self.textItem.update()
         #p.drawPolygon(self.textItem.mapToParent(self.textItem.boundingRect()))
 
-
         p.end()
         self.update()
 
-
-
-
     def paint(self, p, *args):
-        if self.picture is None: return
+        if self.picture is None:
+            return
         p.drawPicture(0, 0, self.picture)
 
     def boundingRect(self):
-        if self.picture is None: return QtCore.QRectF(0, 0, 0, 0)
+        if self.picture is None:
+            return QtCore.QRectF(0, 0, 0, 0)
         return QtCore.QRectF(self.picture.boundingRect())
 
     def angle_between(self, angle0, angle1, angle_span):
         # print("angle_between", angle0, angle1, angle_span)
-        if angle0 < angle1-angle_span/2: return False
-        if angle0 > angle1+angle_span/2: return False
+        if angle0 < angle1-angle_span/2:
+            return False
+        if angle0 > angle1+angle_span/2:
+            return False
         return True
 
     def mouseClickEvent(self, event):
@@ -152,10 +154,12 @@ class CircleItem(pg.GraphicsObject):
         coords = (int(pos[0]), int(pos[1]))
 
         # not this circle
-        dist = np.sqrt((coords[0]-self.center[0])**2+(coords[1]-self.center[1])**2)
-        angle = np.arctan2(coords[0]-self.center[0], coords[1]-self.center[1]) * 180 / np.pi
+        dist = np.sqrt((coords[0]-self.center[0])**2
+                       + (coords[1]-self.center[1])**2)
+        angle = np.arctan2(coords[0]-self.center[0],
+                           coords[1]-self.center[1]) * 180 / np.pi
         #print("dragging from point", self.center, coords, dist, self.radius, abs(dist-self.radius))
-        if abs(dist-self.radius)>5 or not self.angle_between(angle, self.angle, self.angle_span):
+        if abs(dist-self.radius) > 5 or not self.angle_between(angle, self.angle, self.angle_span):
             print("ignore click", dist, self.radius)
             event.ignore()
             return()
@@ -164,7 +168,7 @@ class CircleItem(pg.GraphicsObject):
         event.accept()
 
     def mouseDragEvent(self, event):
-        # print("mouseDragEvent, circle")
+        print("mouseDragEvent, circle")
         if event.button() != QtCore.Qt.LeftButton:
             event.ignore()
             return
@@ -175,14 +179,15 @@ class CircleItem(pg.GraphicsObject):
             coords = (int(pos[0]), int(pos[1]))
 
             # not this circle
-            dist = np.sqrt((coords[0]-self.center[0])**2+(coords[1]-self.center[1])**2)
-            angle = np.arctan2(coords[0]-self.center[0], coords[1]-self.center[1]) * 180 / np.pi
+            dist = np.sqrt((coords[0]-self.center[0])
+                           ** 2+(coords[1]-self.center[1])**2)
+            angle = np.arctan2(coords[0]-self.center[0],
+                               coords[1]-self.center[1]) * 180 / np.pi
             #print("dragging from point", self.center, coords, dist, self.radius, abs(dist-self.radius))
-            if abs(dist-self.radius)>5 or not self.angle_between(angle, self.angle, self.angle_span):
+            if abs(dist-self.radius) > 5 or not self.angle_between(angle, self.angle, self.angle_span):
                 event.ignore()
                 print("ignore drag", dist, self.radius)
                 return()
-
 
             self.dragPoint = coords
             self.select(True)
@@ -208,7 +213,7 @@ class CircleItem(pg.GraphicsObject):
             # self.generatePicture()
 
             #if self.is_master:
-                #self.radiusChanged.sig_masterRadiusChanged.emit(self.radius)
+            #self.radiusChanged.sig_masterRadiusChanged.emit(self.radius)
 
             #event.accept()
         self.generatePicture()
@@ -216,7 +221,6 @@ class CircleItem(pg.GraphicsObject):
         #self.generatePicture()
         #self.update()
         event.accept()
-
 
 
 class MasterCircleItem(CircleItem):
@@ -232,6 +236,7 @@ class MasterCircleItem(CircleItem):
         self.master_radius = self.radius
         self.scaled_radius = self.MASTER_SCALED_RADIUS
         self.generatePicture()
+
 
 class RegularCircleItem(CircleItem):
     is_master = False
