@@ -128,7 +128,7 @@ class PreviewWidget(pg.MultiPlotWidget):
             print("Error: Could not color-convert", self.image_filename)
             return
 
-        if not self.transform is None:
+        if self.transform is not None:
             self.applyColorTransform()
 
         # print(self.transform)
@@ -199,9 +199,11 @@ class PreviewWidget(pg.MultiPlotWidget):
     def applyColorTransform(self):
         if self.transform is None:
             return()
+
         try:
             self.image = cv2.LUT(self.original_image, self.transform)
-        except:
+        except Exception as e:
+            # print(e)
             return()
 
     def setColorTransform(self, transform):

@@ -97,8 +97,8 @@ class CircleItem(pg.GraphicsObject):
             p.drawEllipse(QtCore.QPoint(
                 self.center[0], self.center[1]), self.radius, self.radius)
             p.setPen(pg.mkPen(self.accent_color))
-            p.drawLine(QtCore.QPoint(self.center[0], self.center[1]), QtCore.QPoint(
-                self.radius_point[0], self.radius_point[1]))
+            p.drawLine(QtCore.QPoint(self.center[0], self.center[1]),
+                       QtCore.QPoint(self.radius_point[0], self.radius_point[1]))
 
         p.setPen(pg.mkPen(color=self.accent_color, width=3))
         p.drawArc(int(self.center[0]-self.radius),
@@ -116,7 +116,8 @@ class CircleItem(pg.GraphicsObject):
             p.setFont(QtGui.QFont("Arial", 13))
 
         text = f"{self.label}: {round(self.scaled_radius, 1)} mm"
-        p.drawText(self.center[0]+10, self.center[1]+5, text)
+        # p.drawText(self.center[0]+10, self.center[1]+5, text)
+        p.drawText(self.radius_point[0]+10, self.radius_point[1]+5, text)
 
         #self.textItem.setPlainText(str(self.center)+": " + str(round(self.radius, 1)))
         #self.textItem.setPos(pg.Point(self.center[0], self.center[1]))

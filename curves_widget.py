@@ -10,7 +10,7 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 
 import numpy as np
-from scipy.interpolate import interp1d
+import scipy.interpolate  # import interp1d
 from PIL import Image
 
 from sortedcontainers import SortedDict
@@ -43,14 +43,18 @@ class CurveGraph(pg.PlotCurveItem):
             handles_x = list(self.data['handles'].keys())
             # handles_y = [self.data['handles'][x[0]] for x in sorted(self.data['handles'].items())]
             handles_y = list(self.data['handles'].values())
-            algo = 'cubic'
-            if len(self.data['handles']) == 3:
-                algo = "quadratic"
-            elif len(self.data['handles']) == 2:
-                algo = "linear"
-            f2 = interp1d(handles_x, handles_y, kind=algo)
+            # algo = 'cubic'
+            # if len(self.data['handles']) == 3:
+            #     algo = "quadratic"
+            # elif len(self.data['handles']) == 2:
+            #     algo = "linear"
+            # f2 = scipy.interpolate.interp1d(handles_x, handles_y, kind=algo)
+            f2 = scipy.interpolate.splrep(
+                handles_x, handles_y,
+                k=min(3, len(self.data['handles'])-1))
             xnew = np.linspace(0, 255, num=256, endpoint=True)
-            ynew = f2(xnew)
+            # ynew = f2(xnew)
+            ynew = scipy.interpolate.splev(xnew, f2)
             ynew[ynew > 255] = 255
             ynew[ynew < 0] = 0
             self.data['x'] = xnew
@@ -295,7 +299,7 @@ class CurvesWidget(pg.MultiPlotWidget):
         self.v = self.addPlot()
         self.v.setMenuEnabled(False)
         self.v.hideButtons()
-        self.v.setRange(xRange=[0, 255], yRange=[0, 255], padding=0.01)
+        self.v.setRange(xRange=[-1, 256], yRange=[-1, 256], padding=0.02)
         # self.v.setAspectLocked()
         self.v.setMouseEnabled(x=False, y=False)
         # ticks = [[(0, ""), (63, ""), (127, ""), (191, ""), (255, "")]]
@@ -308,10 +312,10 @@ class CurvesWidget(pg.MultiPlotWidget):
         for side in ("left", "right", "top", "bottom"):
             self.v.hideAxis(side)
 
-        xs = [0, 255, 255, 0, 0]
-        ys = [0, 0, 255, 255, 0]
+        xs = [-1, 256, 256, -1, -1]
+        ys = [-1, -1, 256, 256, -1]
         gridItem1 = pg.PlotCurveItem()
-        gridItem1.setData(x=xs, y=ys, pen=pg.mkPen("r"))
+        gridItem1.setData(x=xs, y=ys, pen=pg.mkPen("r", width=0.1))
         self.v.addItem(gridItem1)
 
         #self.v.showGrid(x=False, y=False)  # , alpha=0.25

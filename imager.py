@@ -253,7 +253,10 @@ class Ui_MainWindow(QMainWindow):
         self.previewer_frame = QtWidgets.QFrame(self.groupBox_preview)
         self.previewer_frame_Layout = QtWidgets.QHBoxLayout(
             self.previewer_frame)
+        # print("here")
         self.previewer = PreviewWidget(self.previewer_frame, "IMG_0147.JPG")
+        # print("here2")
+
         self.previewer_frame_Layout.addWidget(self.previewer)
         self.verticalLayout_right.addWidget(self.previewer_frame)
 
